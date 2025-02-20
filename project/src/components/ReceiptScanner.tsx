@@ -30,45 +30,34 @@ export function ReceiptScanner() {
   // カメラの開始
   const startCamera = async () => {
     try {
-      // 利用可能なカメラデバイスを取得
+      // すべてのビデオ入力デバイスを取得
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      
-      // 仮想カメラを除外し、物理カメラのみをフィルタリング
-      const physicalCameras = videoDevices.filter(device => {
-        const label = device.label.toLowerCase();
-        return !label.includes('obs') && 
-               !label.includes('virtual') && 
-               !label.includes('snap') &&
-               (label.includes('facetime') || 
-                label.includes('integrated') ||
-                label.includes('built-in') ||
-                label.includes('webcam'));
-      });
 
-      if (physicalCameras.length === 0) {
-        throw new Error('利用可能な物理カメラが見つかりません');
+      if (videoDevices.length === 0) {
+        throw new Error('カメラデバイスが見つかりません');
       }
 
-      // デフォルトカメラを選択（通常は最初の物理カメラ）
-      const defaultCamera = physicalCameras[0];
-
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      // カメラストリームを取得
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          deviceId: defaultCamera.deviceId,
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' // 可能な場合は背面カメラを優先
         }
       });
-      
-      setStream(mediaStream);
+
+      // ビデオ要素にストリームを設定
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+        videoRef.current.srcObject = stream;
       }
     } catch (error) {
       console.error('カメラの起動に失敗しました:', error);
-      toast.error('カメラの起動に失敗しました');
+      // ユーザーにエラーを表示
+      alert(`カメラの起動に失敗しました。以下を確認してください：
+      1. ブラウザのカメラ権限が許可されているか
+      2. カメラが他のアプリケーションで使用されていないか
+      3. カメラドライバーが正しくインストールされているか`);
     }
   };
 
